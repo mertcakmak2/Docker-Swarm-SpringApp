@@ -1,0 +1,83 @@
+version: "3.7"
+services:
+  
+  db:
+    image: postgres
+    networks:
+      - springnetwork
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: userdatabase
+    ports:
+      - "5433:5433"
+    volumes:
+    - postgre_vol:/var/lib/postgresql/data
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    networks:
+      - springnetwork
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  
+  redis:
+    image: redis
+    networks:
+      - springnetwork
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_vol:/var/lib/redis/data
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  springapp:
+    image: mertcakmak2/swarm-spring-app
+    networks:
+      - springnetwork
+    ports:
+      - "5005:5005"
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db/userdatabase
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      DB_HOST: db
+    depends_on:
+      - db
+
+volumes:
+  redis_vol:
+  postgre_vol:
+
+networks:
+  springnetwork:
